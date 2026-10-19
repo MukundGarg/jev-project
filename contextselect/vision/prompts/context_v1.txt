@@ -1,19 +1,32 @@
-Describe the visible contents of this image as structured JSON matching the
-ContextSelect Context schema.
+Describe this image as structured semantic evidence. The description must be
+about the image itself, remain query-agnostic, and must not be optimized for a
+user's query.
 
-Include every schema field:
-- subject
-- category
-- appearance
-- distinctive_features
-- function
-- state_condition
-- action_context
-- environment
-- visible_text
-- related_concepts
-- uncertainty
+Return exactly one JSON object matching the ContextSelect Context schema, with
+all required fields and types:
+- "subject": string; the most specific identification supported by the image.
+- "category": string; a broad class such as tool, vehicle, food, animal,
+  electronics, furniture, or document.
+- "appearance": string; visible shape, color, material, texture, and relative
+  size cues.
+- "distinctive_features": array of strings; visible parts or markings that
+  distinguish the subject.
+- "function": string; an apparent use only when supported, clearly marked as
+  an inference when it cannot be directly observed.
+- "state_condition": string; visible condition or state, such as intact,
+  damaged, open, closed, or in use, with evidence. If not determinable, say so.
+- "action_context": string; visible activity and interactions, or state that
+  no action is apparent.
+- "environment": string; visible setting and surrounding scene.
+- "visible_text": array of strings; include only text that is actually legible,
+  preserving it verbatim. Use an empty array if no text is legible.
+- "related_concepts": array of strings; plausible lookalikes or broader
+  categories only when useful and supported. Use an empty array otherwise.
+- "uncertainty": string; state what is unclear, occluded, or low-confidence.
+  Use an empty string if no notable uncertainty is visible.
 
-Describe only what is visible. Clearly mark inferences as inferences, do not
-guess when details are unclear, and use concise, literal language. This
-description must be query-agnostic. Return JSON only.
+Describe only observable evidence. Do not invent details, infer identity from
+unsupported assumptions, or use poetic language. Clearly label any inference
+as an inference, and state uncertainty rather than guessing. Be concise and
+literal. Do not refer to or answer any user query. Return JSON only, with no
+Markdown fences or surrounding explanation.
