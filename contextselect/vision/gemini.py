@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Protocol, TypeAlias
+from typing import Any, Protocol, TypeAlias
 
 from google import genai
 from google.genai import types
@@ -41,6 +41,44 @@ class _TextResponse(Protocol):
     text: str | None
 
 
+def _gemini_context_schema() -> dict[str, Any]:
+    """Return the Context shape using only Gemini-supported schema keywords."""
+    string_schema = {"type": "STRING"}
+    string_array_schema = {
+        "type": "ARRAY",
+        "items": string_schema,
+    }
+    return {
+        "type": "OBJECT",
+        "properties": {
+            "subject": string_schema,
+            "category": string_schema,
+            "appearance": string_schema,
+            "distinctive_features": string_array_schema,
+            "function": string_schema,
+            "state_condition": string_schema,
+            "action_context": string_schema,
+            "environment": string_schema,
+            "visible_text": string_array_schema,
+            "related_concepts": string_array_schema,
+            "uncertainty": string_schema,
+        },
+        "required": [
+            "subject",
+            "category",
+            "appearance",
+            "distinctive_features",
+            "function",
+            "state_condition",
+            "action_context",
+            "environment",
+            "visible_text",
+            "related_concepts",
+            "uncertainty",
+        ],
+    }
+
+
 def _image_data(image: ImageInput) -> tuple[bytes, str]:
     if isinstance(image, (str, Path)):
         try:
@@ -66,6 +104,17 @@ def _image_data(image: ImageInput) -> tuple[bytes, str]:
 
 
 def _context_from_response(response: _TextResponse) -> Context:
+    parsed = getattr(response, "parsed", None)
+    if isinstance(parsed, Context):
+        return parsed
+    if isinstance(parsed, dict):
+        try:
+            return Context.model_validate(parsed)
+        except ValidationError as exc:
+            raise _MalformedResponseError(
+                "Gemini parsed response did not match the Context schema."
+            ) from exc
+
     try:
         response_text = response.text
     except ValueError as exc:
@@ -98,7 +147,7 @@ class GeminiContextGenerator(ContextGenerator[ImageInput]):
         self._prompt = PROMPT_PATH.read_text(encoding="utf-8")
         self._config = types.GenerateContentConfig(
             response_mime_type="application/json",
-            response_schema=Context,
+            response_schema=_gemini_context_schema(),
             temperature=0,
         )
 

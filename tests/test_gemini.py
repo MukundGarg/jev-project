@@ -48,10 +48,55 @@ def test_generates_and_validates_structured_context() -> None:
     request = client.models.generate_content.call_args.kwargs
     assert request["model"] == MODEL_NAME
     assert request["config"].response_mime_type == "application/json"
-    assert request["config"].response_schema is Context
     assert request["config"].temperature == 0
+    response_schema = request["config"].response_schema
+    assert response_schema["type"] == "OBJECT"
+    assert response_schema["required"] == list(Context.model_fields)
+
+    def assert_no_unsupported_additional_properties(schema: object) -> None:
+        if isinstance(schema, dict):
+            assert "additionalProperties" not in schema
+            assert "additional_properties" not in schema
+            for value in schema.values():
+                assert_no_unsupported_additional_properties(value)
+        elif isinstance(schema, list):
+            for value in schema:
+                assert_no_unsupported_additional_properties(value)
+
+    assert_no_unsupported_additional_properties(response_schema)
     assert "query-agnostic" in request["contents"][0]
     assert request["contents"][1].inline_data.mime_type == "image/png"
+
+
+def test_uses_validated_parsed_context_when_sdk_provides_it() -> None:
+    generator, client = make_generator(["not used"])
+    parsed_context = Context.model_validate_json(VALID_CONTEXT_JSON)
+    client.models.generate_content.side_effect = None
+    client.models.generate_content.return_value = Mock(
+        parsed=parsed_context,
+        text=None,
+    )
+
+    result = generator.generate(PNG_BYTES)
+
+    assert result is parsed_context
+    client.models.generate_content.assert_called_once()
+
+
+def test_parsed_dict_is_still_validated_against_strict_context_schema() -> None:
+    generator, client = make_generator(["not used"])
+    parsed_context = Context.model_validate_json(VALID_CONTEXT_JSON).model_dump()
+    parsed_context["unexpected"] = "extra field"
+    client.models.generate_content.side_effect = None
+    client.models.generate_content.return_value = Mock(
+        parsed=parsed_context,
+        text=None,
+    )
+
+    with pytest.raises(GeminiContextError, match="after one retry"):
+        generator.generate(PNG_BYTES)
+
+    assert client.models.generate_content.call_count == 2
 
 
 def test_retries_malformed_response_once_then_succeeds() -> None:
