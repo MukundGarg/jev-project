@@ -56,6 +56,27 @@ This breakdown is the most interview-relevant output of the project.
 
 Temperature 0, versioned prompts, pinned model identifiers, cached contexts stored with their hashes, one command (`python eval/run_eval.py`) regenerates the results table in `eval/results/`.
 
+The manifest is JSON with a version, `default_n` (default 4), and trials. Each
+trial contains an ID, query, image entries (`id` and local `path`), and a
+`correct_index` pointing to the one correct image or `null` for no-match trials.
+The runner currently implements the structured-context -> Jev system and a
+seeded random baseline. Other systems in the comparison table are explicit
+extension hooks until their adapters are available.
+
+For example, the synthetic manifest can run the random baseline without image
+files:
+
+```sh
+python -m eval.run_eval --manifest eval/examples/demo_manifest.json --system random
+```
+
+The structured baseline requires each referenced image file and configured
+Gemini and TypeSafe Jev API keys. Results are written as one aggregate/trial
+JSON file and one per-trial CSV under `eval/results/`. Top-1 accuracy is
+reported over normal N-way trials; no-match correct-reject and false-accept
+rates are reported separately. Average latency is measured per trial and
+averaged across all trials.
+
 ## 8. Limits of this evaluation
 
 Small dataset, single VLM, English only, and results may not transfer to other domains. State this in the README.

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "default_n": 4,
+  "trials": [
+    {
+      "id": "demo-cutting-tool",
+      "query": "Which image shows a cutting tool?",
+      "correct_index": 1,
+      "images": [
+        {"id": "demo-image-1", "path": "images/demo-image-1.jpg"},
+        {"id": "demo-image-2", "path": "images/demo-image-2.jpg"},
+        {"id": "demo-image-3", "path": "images/demo-image-3.jpg"},
+        {"id": "demo-image-4", "path": "images/demo-image-4.jpg"}
+      ]
+    },
+    {
+      "id": "demo-no-match",
+      "query": "Which image shows a flying vehicle?",
+      "correct_index": null,
+      "images": [
+        {"id": "demo-nomatch-1", "path": "images/demo-nomatch-1.jpg"},
+        {"id": "demo-nomatch-2", "path": "images/demo-nomatch-2.jpg"},
+        {"id": "demo-nomatch-3", "path": "images/demo-nomatch-3.jpg"},
+        {"id": "demo-nomatch-4", "path": "images/demo-nomatch-4.jpg"}
+      ]
+    }
+  ]
+}
