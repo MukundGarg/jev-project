@@ -9,10 +9,10 @@ import gradio as gr
 from contextselect.pipeline import SingleImagePipeline
 from contextselect.rate_limit import SubmissionRateLimiter
 from contextselect.ranker import MAX_IMAGES_PER_QUERY, RankedResult
-from contextselect.jev.typesafe import (
+from contextselect.jev.openrouter import (
     JevAdapterError,
     JevConfigurationError,
-    TypeSafeJevAdapter,
+    OpenRouterJevAdapter,
 )
 from contextselect.vision.gemini import (
     GeminiConfigurationError,
@@ -28,7 +28,7 @@ def create_pipeline() -> SingleImagePipeline[str]:
     """Construct the production providers, reading secrets from the environment."""
     return SingleImagePipeline(
         context_generator=GeminiContextGenerator(),
-        classifier=TypeSafeJevAdapter(),
+        classifier=OpenRouterJevAdapter(),
     )
 
 
@@ -79,7 +79,7 @@ def _safe_error_message(error: Exception) -> str:
     if isinstance(error, GeminiConfigurationError):
         return "Gemini configuration is missing. Set GEMINI_API_KEY in the environment."
     if isinstance(error, JevConfigurationError):
-        return "Jev configuration is missing. Set TYPESAFE_API_KEY in the environment."
+        return "Jev configuration is missing. Set OPENROUTER_API_KEY in the environment."
     if isinstance(error, GeminiContextError):
         return "Gemini context generation failed. Please try again later."
     if isinstance(error, JevAdapterError):

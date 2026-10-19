@@ -11,7 +11,7 @@ Image selection is often more useful when the system can compare a query against
 For each submitted image, the pipeline performs:
 
 1. Gemini 2.5 Flash reads the image and produces a query-agnostic `Context`.
-2. The TypeSafe Jev adapter sends that structured context and the user's query to Jev as a `noul` question named `match`.
+2. The OpenRouter adapter sends that structured context and the user's query to TypeSafe Jev's `typesafe/jev-router` model as a `noul` question named `match`.
 3. The adapter reads `answers.match.noul` as a probability from 0 to 1 and returns a `Judgement`.
 4. The ranker sorts images by score, preserving original order for equal scores. It returns `best_match`, `no_confident_match`, or `ambiguous`.
 
@@ -62,7 +62,7 @@ The application reads credentials only from environment variables:
 | Variable | Purpose |
 | --- | --- |
 | `GEMINI_API_KEY` | Gemini 2.5 Flash context generation |
-| `TYPESAFE_API_KEY` | TypeSafe Jev relevance scoring |
+| `OPENROUTER_API_KEY` | TypeSafe Jev relevance scoring through OpenRouter |
 
 Do not commit `.env` or put credentials in source code, manifests, or logs. `.env.example` contains empty placeholders only.
 
@@ -108,7 +108,7 @@ The runner writes machine-readable JSON and CSV under `eval/results/`. API usage
 | No-match result | Not tested |
 | Average latency | Not available |
 
-No real provider calls were made: `GEMINI_API_KEY` and `TYPESAFE_API_KEY` were not configured in the execution environment, and no local image files were present. The example manifest's image paths are placeholders, not evaluation data. No real evaluation performance is claimed.
+No real provider calls were made: `GEMINI_API_KEY` and `OPENROUTER_API_KEY` were not configured in the execution environment, and no local image files were present. The example manifest's image paths are placeholders, not evaluation data. No real evaluation performance is claimed.
 
 ## Limitations and failure modes
 

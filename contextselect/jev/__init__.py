@@ -1,7 +1,7 @@
 """Classifier interfaces and Jev backends."""
 
 from contextselect.jev.base import Classifier
-from contextselect.jev.typesafe import (
+from contextselect.jev.openrouter import (
     JevAdapterError,
     JevAnswerMissingError,
     JevConfigurationError,
@@ -9,7 +9,7 @@ from contextselect.jev.typesafe import (
     JevInvalidProbabilityError,
     JevMalformedResponseError,
     JevNetworkError,
-    TypeSafeJevAdapter,
+    OpenRouterJevAdapter,
 )
 
 __all__ = [
@@ -21,5 +21,5 @@ __all__ = [
     "JevInvalidProbabilityError",
     "JevMalformedResponseError",
     "JevNetworkError",
-    "TypeSafeJevAdapter",
+    "OpenRouterJevAdapter",
 ]

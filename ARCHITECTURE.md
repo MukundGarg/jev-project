@@ -34,7 +34,7 @@ tests/
 
 Both models are behind these interfaces so baselines and ablations in evaluation reuse the same pipeline.
 
-The TypeSafe Jev adapter uses `POST https://api.typesafe.ai/v1/systemone`. Set the `Authorization` header using the API token loaded from the `TYPESAFE_API_KEY` environment variable; never hardcode or commit it. For each image, send that image's structured context as `state` and a `questions` object with a `"match"` question of type `"noul"`. Its instructions ask whether the context matches the user's target concept/query. Read `answers.match.noul` as the relevance probability in [0,1]. Do not send image pixels or request a free-text rationale. Adapter behavior must follow the confirmed TypeSafe API contract.
+The OpenRouter Jev adapter uses `POST https://openrouter.ai/api/alpha/decisions` with model `typesafe/jev-router`. Set the `Authorization` header using the API key loaded from `OPENROUTER_API_KEY`; never hardcode or commit it. For each image, send that image's structured context as `state` and a `questions` object with a `"match"` question of type `"noul"`. Its instructions ask whether the context matches the user's target concept/query. Read `answers.match.noul` as the relevance probability in [0,1]. Do not send image pixels or request a free-text rationale.
 
 ## 3. Semantic context schema (v1)
 
@@ -78,7 +78,7 @@ Rules in the prompt: describe only what is visible; mark inferences as inference
 - Python 3.11+, Pydantic for the schema, Gradio for UI (one file, shareable demo), pytest, `requirements.txt` or `pyproject.toml` with pinned versions.
 - VLM: Gemini 2.5 Flash via hosted API. Hosted APIs are acceptable; the interface keeps the backend swappable.
 - Maximum images per query: 8.
-- JEV: official TypeSafe Jev API, `POST https://api.typesafe.ai/v1/systemone`; set the `Authorization` header using a token loaded from `TYPESAFE_API_KEY`. Use the `noul` question type for per-image relevance scoring. The adapter receives structured context and query only, and reads the probability from `answers.match.noul`.
+- JEV: TypeSafe Jev via OpenRouter's Decisions API at `POST https://openrouter.ai/api/alpha/decisions`, using model `typesafe/jev-router`; set the `Authorization` header using a key loaded from `OPENROUTER_API_KEY`. Use the `noul` question type for per-image relevance scoring. The adapter receives structured context and query only, and reads the probability from `answers.match.noul`.
 
 ## 7. Error handling
 

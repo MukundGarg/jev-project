@@ -9,7 +9,7 @@ from contextselect.rate_limit import SubmissionRateLimiter
 from contextselect.ranker import RankedItem, RankedResult
 from contextselect.schema import Context, Judgement
 from contextselect.vision.gemini import GeminiConfigurationError
-from contextselect.jev.typesafe import JevConfigurationError
+from contextselect.jev.openrouter import JevConfigurationError
 
 
 @pytest.fixture(autouse=True)
@@ -49,7 +49,7 @@ def test_create_pipeline_injects_provider_instances() -> None:
     classifier = Mock()
     with (
         patch.object(app, "GeminiContextGenerator", return_value=context_generator),
-        patch.object(app, "TypeSafeJevAdapter", return_value=classifier),
+        patch.object(app, "OpenRouterJevAdapter", return_value=classifier),
     ):
         pipeline = app.create_pipeline()
 
@@ -118,7 +118,7 @@ def test_submit_handler_rejects_invalid_input_without_constructing_provider(
     ("error", "expected"),
     [
         (GeminiConfigurationError("GEMINI_API_KEY required"), "GEMINI_API_KEY"),
-        (JevConfigurationError("TYPESAFE_API_KEY required"), "TYPESAFE_API_KEY"),
+        (JevConfigurationError("OPENROUTER_API_KEY required"), "OPENROUTER_API_KEY"),
         (RuntimeError("secret must not leak"), "Processing failed"),
     ],
 )

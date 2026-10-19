@@ -71,7 +71,7 @@ python -m eval.run_eval --manifest eval/examples/demo_manifest.json --system ran
 ```
 
 The structured baseline requires each referenced image file and configured
-Gemini and TypeSafe Jev API keys. Results are written as one aggregate/trial
+Gemini and OpenRouter API keys. Results are written as one aggregate/trial
 JSON file and one per-trial CSV under `eval/results/`. Top-1 accuracy is
 reported over normal N-way trials; no-match correct-reject and false-accept
 rates are reported separately. Average latency is measured per trial and

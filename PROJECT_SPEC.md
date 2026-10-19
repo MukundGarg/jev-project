@@ -26,7 +26,7 @@ Details in ARCHITECTURE.md.
 
 ## 4. Assumptions and confirmed decisions
 
-- A1. **JEV is accessed through the official TypeSafe Jev API.** Send one image's structured context as `state` and a `"match"` question of type `"noul"` to `POST https://api.typesafe.ai/v1/systemone`; read `answers.match.noul` as the relevance probability in [0,1]. Set the `Authorization` header using the API token loaded from the `TYPESAFE_API_KEY` environment variable. Never hardcode or commit the key. JEV must not receive image pixels and no free-text rationale is required.
+- A1. **JEV is accessed through OpenRouter's Decisions API.** Use model `typesafe/jev-router` and send one image's structured context as `state` with a `"match"` question of type `"noul"` to `POST https://openrouter.ai/api/alpha/decisions`; read `answers.match.noul` as the relevance probability in [0,1]. Set the `Authorization` header using the API key loaded from the `OPENROUTER_API_KEY` environment variable. Never hardcode or commit the key. JEV must not receive image pixels and no free-text rationale is required.
 - A2. Use Gemini 2.5 Flash via hosted API as the frozen, off-the-shelf vision component. Hosted APIs are acceptable; no training from scratch.
 - A3. Images are single photographs or product shots, not video, medical or satellite imagery.
 - A4. English-only queries and context.

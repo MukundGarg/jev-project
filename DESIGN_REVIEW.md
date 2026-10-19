@@ -2,10 +2,10 @@
 
 Format per item: **Original** / **Recommendation** / **Reason**.
 
-## 1. JEV API contract (confirmed)
+## 1. JEV API contract (current)
 
 - **Original:** JEV is "the final classification model" that receives context and classifies.
-- **Confirmed interface:** Official TypeSafe Jev API, `POST https://api.typesafe.ai/v1/systemone`. Set the `Authorization` header using a token loaded only from the `TYPESAFE_API_KEY` environment variable; never hardcode or commit it. `.env` is excluded through `.gitignore`.
+- **Current interface:** TypeSafe Jev through OpenRouter's Decisions API, `POST https://openrouter.ai/api/alpha/decisions`, model `typesafe/jev-router`. Set the `Authorization` header using a key loaded only from `OPENROUTER_API_KEY`; never hardcode or commit it. `.env` is excluded through `.gitignore`.
 - **Request:** One call per image. Send that image's structured semantic context as `state`; use `questions.match.type = "noul"` and ask in `questions.match.instructions` whether the context matches the user's target concept/query.
 - **Response:** Read `answers.match.noul` as the relevance probability in [0,1]. Rank image contexts by their returned probabilities. Use thresholds for no-match/ambiguity in the ranker later.
 - **Privacy and output:** Jev receives structured context and the query only, never image pixels. Do not require or request a free-text rationale; Jev is used as a typed decision model.
@@ -75,6 +75,6 @@ Not created: separate requirements, user-story, API, or changelog docs. They wou
 
 ## 12. Confirmed Phase 0 decisions
 
-**Confirmed:** Gemini 2.5 Flash is the Vision Context Generator; hosted APIs are acceptable; the maximum is 8 images per query; TypeSafe Jev is called once per image through its `noul` question API; its relevance probability is read from `answers.match.noul`; the API token is loaded from `TYPESAFE_API_KEY` and sent in the `Authorization` header; and the adapter interface is `Classifier.score(context, query) -> {score}`. Jev never receives image pixels, and no free-text rationale is required.
+**Confirmed:** Gemini 2.5 Flash is the Vision Context Generator; hosted APIs are acceptable; the maximum is 8 images per query; TypeSafe Jev is called once per image through OpenRouter's Decisions API using model `typesafe/jev-router` and its `noul` question type; its relevance probability is read from `answers.match.noul`; the API key is loaded from `OPENROUTER_API_KEY` and sent in the `Authorization` header; and the adapter interface is `Classifier.score(context, query) -> {score}`. Jev never receives image pixels, and no free-text rationale is required.
 
 **Phase 0 is complete.** The JEV adapter and all other application code remain unimplemented; Phase 1 has not begun.

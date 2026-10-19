@@ -15,7 +15,7 @@ from contextselect.ranker import (
     DEFAULT_AMBIGUITY_MARGIN,
     DEFAULT_CONFIDENCE_THRESHOLD,
 )
-from contextselect.jev.typesafe import TypeSafeJevAdapter
+from contextselect.jev.openrouter import OpenRouterJevAdapter
 from contextselect.vision.gemini import GeminiContextGenerator
 from eval.baselines import (
     BaselinePrediction,
@@ -204,7 +204,7 @@ def _build_baseline(
     if name == "structured_context_jev":
         pipeline = SingleImagePipeline(
             GeminiContextGenerator(),
-            TypeSafeJevAdapter(),
+            OpenRouterJevAdapter(),
         )
         return StructuredContextBaseline(
             pipeline,
