@@ -5,10 +5,16 @@ import pytest
 
 import app
 from contextselect.pipeline import SingleImagePipeline
+from contextselect.rate_limit import SubmissionRateLimiter
 from contextselect.ranker import RankedItem, RankedResult
 from contextselect.schema import Context, Judgement
 from contextselect.vision.gemini import GeminiConfigurationError
 from contextselect.jev.typesafe import JevConfigurationError
+
+
+@pytest.fixture(autouse=True)
+def reset_submission_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(app, "_submission_rate_limiter", SubmissionRateLimiter())
 
 
 def make_context(subject: str) -> Context:
@@ -113,7 +119,7 @@ def test_submit_handler_rejects_invalid_input_without_constructing_provider(
     [
         (GeminiConfigurationError("GEMINI_API_KEY required"), "GEMINI_API_KEY"),
         (JevConfigurationError("TYPESAFE_API_KEY required"), "TYPESAFE_API_KEY"),
-        (RuntimeError("secret must not leak"), "RuntimeError"),
+        (RuntimeError("secret must not leak"), "Processing failed"),
     ],
 )
 def test_submit_handler_surfaces_safe_provider_errors(
@@ -131,6 +137,8 @@ def test_submit_handler_surfaces_safe_provider_errors(
     assert expected in status
     if isinstance(error, RuntimeError) and not isinstance(error, (GeminiConfigurationError, JevConfigurationError)):
         assert "secret must not leak" not in status
+    if isinstance(error, RuntimeError):
+        assert "RuntimeError" not in status
     assert gallery == []
     assert contexts == []
 
@@ -163,3 +171,63 @@ def test_build_demo_returns_gradio_blocks() -> None:
     demo = app.build_demo()
 
     assert isinstance(demo, gr.Blocks)
+
+
+def test_submission_rate_limit_counts_one_request_for_eight_images() -> None:
+    pipeline = Mock()
+    pipeline.run_many.return_value = make_result()
+    pipeline_factory = Mock(return_value=pipeline)
+    rate_limiter = SubmissionRateLimiter(daily_limit=1)
+    request = Mock()
+    request.client.host = "192.0.2.10"
+    image_paths = [f"/tmp/{index}.png" for index in range(8)]
+
+    first = app.handle_submission(
+        image_paths,
+        "find the target",
+        request,
+        pipeline_factory=pipeline_factory,
+        rate_limiter=rate_limiter,
+    )
+    second = app.handle_submission(
+        image_paths,
+        "find the target",
+        request,
+        pipeline_factory=pipeline_factory,
+        rate_limiter=rate_limiter,
+    )
+
+    assert "best_match" in first[0]
+    assert "Daily submission limit reached (1 per client)" in second[0]
+    assert second[1:] == ([], [])
+    pipeline.run_many.assert_called_once_with(image_paths, "find the target")
+
+
+def test_submission_rate_limit_is_scoped_to_client_ip() -> None:
+    pipeline = Mock()
+    pipeline.run_many.return_value = make_result()
+    pipeline_factory = Mock(return_value=pipeline)
+    rate_limiter = SubmissionRateLimiter(daily_limit=1)
+    first_client = Mock()
+    first_client.client.host = "192.0.2.10"
+    second_client = Mock()
+    second_client.client.host = "192.0.2.11"
+
+    first = app.handle_submission(
+        ["/tmp/first.png", "/tmp/second.png"],
+        "find the target",
+        first_client,
+        pipeline_factory=pipeline_factory,
+        rate_limiter=rate_limiter,
+    )
+    second = app.handle_submission(
+        ["/tmp/first.png", "/tmp/second.png"],
+        "find the target",
+        second_client,
+        pipeline_factory=pipeline_factory,
+        rate_limiter=rate_limiter,
+    )
+
+    assert "best_match" in first[0]
+    assert "best_match" in second[0]
+    assert pipeline.run_many.call_count == 2

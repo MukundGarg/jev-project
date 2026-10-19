@@ -76,6 +76,8 @@ python app.py
 
 Open the local Gradio URL printed by the process. Upload 1–8 images, enter a query, and submit. The app displays the final status, ranked images and Jev scores, and each image's generated context. Missing credentials and provider errors are surfaced without displaying secret values.
 
+The demo limits each client IP to 5 submissions per rolling minute and 50 submissions per UTC day. One submission counts once regardless of how many images it contains. These limits are held in memory, are not authentication, and reset when the hosted app restarts.
+
 ## Evaluation
 
 The evaluation harness accepts JSON manifests. `default_n` defaults to 4 and must match the number of images in every trial. Each trial has an `id`, a non-empty `query`, four (or configured N) images with unique `id` and local `path`, and `correct_index` (zero-based) or `null` for a no-match trial. Paths are resolved relative to the manifest file. The example at `eval/examples/demo_manifest.json` documents the shape but references image files that are not included.
@@ -142,7 +144,7 @@ eval/
   baselines.py  Evaluation baseline interfaces and implementations
   run_eval.py   Runner, metrics, and JSON/CSV output
 tests/          Mock-only unit and integration tests
-app.py          Gradio application
+app.py          Gradio application and per-client submission limiting
 ```
 
 ## Interview-relevant design decisions

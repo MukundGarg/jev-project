@@ -7,6 +7,7 @@ from typing import Any
 import gradio as gr
 
 from contextselect.pipeline import SingleImagePipeline
+from contextselect.rate_limit import SubmissionRateLimiter
 from contextselect.ranker import MAX_IMAGES_PER_QUERY, RankedResult
 from contextselect.jev.typesafe import (
     JevAdapterError,
@@ -20,6 +21,7 @@ from contextselect.vision.gemini import (
 )
 
 PipelineFactory = Callable[[], SingleImagePipeline[str]]
+_submission_rate_limiter = SubmissionRateLimiter()
 
 
 def create_pipeline() -> SingleImagePipeline[str]:
@@ -79,19 +81,25 @@ def _safe_error_message(error: Exception) -> str:
     if isinstance(error, JevConfigurationError):
         return "Jev configuration is missing. Set TYPESAFE_API_KEY in the environment."
     if isinstance(error, GeminiContextError):
-        return f"Gemini context generation failed: {error}"
+        return "Gemini context generation failed. Please try again later."
     if isinstance(error, JevAdapterError):
-        return f"Jev scoring failed: {error}"
-    return f"Processing failed ({type(error).__name__}). Check provider configuration and try again."
+        return "Jev scoring failed. Please try again later."
+    return "Processing failed. Check the inputs and try again later."
 
 
 def handle_submission(
     image_paths: Sequence[str] | None,
     query: str | None,
+    request: gr.Request | None = None,
     *,
     pipeline_factory: PipelineFactory | None = None,
+    rate_limiter: SubmissionRateLimiter | None = None,
 ) -> tuple[str, list[tuple[str, str]], list[dict[str, Any]]]:
     """Validate submission, invoke the pipeline, and format results for Gradio."""
+    client_id = request.client.host if request and request.client else "unknown-client"
+    limit_message = (rate_limiter or _submission_rate_limiter).check(client_id)
+    if limit_message:
+        return f"**Error:** {limit_message}", [], []
     if not isinstance(query, str) or not query.strip():
         return "**Error:** Enter a non-empty query.", [], []
     if not image_paths:
