@@ -110,3 +110,86 @@ def test_providers_are_injected_and_used() -> None:
     assert result.judgement is JUDGEMENT
     injected_context_generator.generate.assert_called_once_with(IMAGE)
     injected_classifier.score.assert_called_once_with(CONTEXT, QUERY)
+
+
+def test_run_many_scores_and_ranks_multiple_images() -> None:
+    images = [b"image-0", b"image-1", b"image-2"]
+    contexts = [CONTEXT.model_copy(update={"subject": f"object-{i}"}) for i in range(3)]
+    context_generator = Mock(spec=ContextGenerator)
+    context_generator.generate.side_effect = contexts
+    classifier = Mock(spec=Classifier)
+    classifier.score.side_effect = [
+        Judgement(score=0.62),
+        Judgement(score=0.91),
+        Judgement(score=0.2),
+    ]
+    pipeline = SingleImagePipeline(context_generator, classifier)
+
+    result = pipeline.run_many(images, QUERY)
+
+    assert result.status == "best_match"
+    assert result.best_index == 1
+    assert [item.index for item in result.ranked_items] == [1, 0, 2]
+    assert result.ranked_items[0].context is contexts[1]
+    assert result.ranked_items[0].judgement.score == 0.91
+    assert [call.args[0] for call in classifier.score.call_args_list] == contexts
+    assert all(call.args[1] == QUERY for call in classifier.score.call_args_list)
+
+
+def test_run_many_supports_one_image() -> None:
+    pipeline, context_generator, classifier = make_pipeline()
+
+    result = pipeline.run_many([IMAGE], QUERY)
+
+    assert result.status == "best_match"
+    assert result.best_index == 0
+    assert [item.index for item in result.ranked_items] == [0]
+    context_generator.generate.assert_called_once_with(IMAGE)
+    classifier.score.assert_called_once_with(CONTEXT, QUERY)
+
+
+def test_run_many_supports_eight_images() -> None:
+    images = [f"image-{index}" for index in range(8)]
+    context_generator = Mock(spec=ContextGenerator)
+    context_generator.generate.return_value = CONTEXT
+    classifier = Mock(spec=Classifier)
+    classifier.score.return_value = Judgement(score=0.9)
+    pipeline = SingleImagePipeline(context_generator, classifier)
+
+    result = pipeline.run_many(images, QUERY)
+
+    assert len(result.ranked_items) == 8
+    assert context_generator.generate.call_count == 8
+    assert classifier.score.call_count == 8
+    assert result.status == "ambiguous"
+    assert [item.index for item in result.ranked_items] == list(range(8))
+
+
+def test_run_many_rejects_more_than_eight_before_provider_calls() -> None:
+    pipeline, context_generator, classifier = make_pipeline()
+
+    with pytest.raises(ValueError, match="maximum of 8"):
+        pipeline.run_many([f"image-{index}" for index in range(9)], QUERY)
+
+    context_generator.generate.assert_not_called()
+    classifier.score.assert_not_called()
+
+
+def test_run_many_rejects_empty_image_list_before_provider_calls() -> None:
+    pipeline, context_generator, classifier = make_pipeline()
+
+    with pytest.raises(ValueError, match="At least one image"):
+        pipeline.run_many([], QUERY)
+
+    context_generator.generate.assert_not_called()
+    classifier.score.assert_not_called()
+
+
+def test_run_many_rejects_blank_query_before_provider_calls() -> None:
+    pipeline, context_generator, classifier = make_pipeline()
+
+    with pytest.raises(ValueError, match="non-empty"):
+        pipeline.run_many([IMAGE], " ")
+
+    context_generator.generate.assert_not_called()
+    classifier.score.assert_not_called()

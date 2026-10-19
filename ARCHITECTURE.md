@@ -30,7 +30,7 @@ tests/
 
 - `ContextGenerator.generate(image) -> Context`
 - `Classifier.score(context, query) -> Judgement{score}` where `score` is JEV's relevance probability in [0,1]. No free-text rationale is requested. The adapter remains modular behind this interface.
-- `rank(judgements, threshold) -> RankedResult{ordered, best | None}`
+- `rank(items, confidence_threshold=0.5, ambiguity_margin=0.05) -> RankedResult`; results are sorted descending by score, with stable input order for ties. Scores below the confidence threshold yield `no_confident_match`; a top-two score gap less than or equal to the ambiguity margin yields `ambiguous`; otherwise the top image is `best_match`.
 
 Both models are behind these interfaces so baselines and ablations in evaluation reuse the same pipeline.
 
