@@ -1,0 +1,19 @@
+Describe the visible contents of this image as structured JSON matching the
+ContextSelect Context schema.
+
+Include every schema field:
+- subject
+- category
+- appearance
+- distinctive_features
+- function
+- state_condition
+- action_context
+- environment
+- visible_text
+- related_concepts
+- uncertainty
+
+Describe only what is visible. Clearly mark inferences as inferences, do not
+guess when details are unclear, and use concise, literal language. This
+description must be query-agnostic. Return JSON only.
