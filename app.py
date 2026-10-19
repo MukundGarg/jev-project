@@ -1,7 +1,10 @@
 """Gradio UI for query-conditioned image selection."""
 
 from collections.abc import Callable, Sequence
+import logging
+import os
 from pathlib import Path
+import traceback
 from typing import Any
 
 import gradio as gr
@@ -21,6 +24,7 @@ from contextselect.vision.gemini import (
 )
 
 PipelineFactory = Callable[[], SingleImagePipeline[str]]
+_logger = logging.getLogger(__name__)
 _submission_rate_limiter = SubmissionRateLimiter()
 
 
@@ -87,6 +91,16 @@ def _safe_error_message(error: Exception) -> str:
     return "Processing failed. Check the inputs and try again later."
 
 
+def _log_processing_error(error: Exception) -> None:
+    """Log a traceback to the server terminal while redacting configured API keys."""
+    formatted_traceback = "".join(traceback.format_exception(error))
+    for variable_name in ("GEMINI_API_KEY", "OPENROUTER_API_KEY"):
+        secret = os.getenv(variable_name)
+        if secret:
+            formatted_traceback = formatted_traceback.replace(secret, "[REDACTED]")
+    _logger.error("ContextSelect submission failed:\n%s", formatted_traceback)
+
+
 def handle_submission(
     image_paths: Sequence[str] | None,
     query: str | None,
@@ -113,6 +127,7 @@ def handle_submission(
         result = pipeline.run_many(paths, query)
         return format_result(result, paths)
     except Exception as exc:
+        _log_processing_error(exc)
         return f"**Error:** {_safe_error_message(exc)}", [], []
 
 

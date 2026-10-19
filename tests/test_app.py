@@ -143,6 +143,29 @@ def test_submit_handler_surfaces_safe_provider_errors(
     assert contexts == []
 
 
+def test_submit_handler_logs_traceback_without_exposing_configured_key(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    api_key = "test-openrouter-secret"
+    monkeypatch.setenv("OPENROUTER_API_KEY", api_key)
+    factory = Mock(side_effect=RuntimeError(f"request failed with {api_key}"))
+
+    status, gallery, contexts = app.handle_submission(
+        ["/tmp/image.png"],
+        "find the target",
+        pipeline_factory=factory,
+    )
+
+    assert "Processing failed" in status
+    assert api_key not in status
+    assert api_key not in caplog.text
+    assert "[REDACTED]" in caplog.text
+    assert "Traceback" in caplog.text
+    assert gallery == []
+    assert contexts == []
+
+
 def test_format_result_displays_ambiguous_and_no_match_statuses() -> None:
     ambiguous = RankedResult(
         ranked_items=(
